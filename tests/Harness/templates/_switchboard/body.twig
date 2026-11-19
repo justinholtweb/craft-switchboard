@@ -1,0 +1,2 @@
+{# A rule body template (Twig): gets the snapshot as `element`, the element itself as `object`. #}
+TWIG BODY {{ element.title }} #{{ object.id }} for {{ recipient.name ?? 'anyone' }} [{{ element.fields.switchboardSummary ?? '' }}] {{ 'Published: {title}'|t('switchboard', {title: element.title}) }}

@@ -9,6 +9,7 @@
 //   password for all: switchboard-pass-1
 // Run with: ddev artisan tinker --execute "require 'storage/switchboard-fixtures.php';"
 
+use CraftCms\Cms\Asset\Data\Volume;
 use CraftCms\Cms\Entry\Data\EntryType;
 use CraftCms\Cms\Entry\Elements\Entry;
 use CraftCms\Cms\Field\PlainText;
@@ -25,6 +26,7 @@ use CraftCms\Cms\Support\Facades\Sections;
 use CraftCms\Cms\Support\Facades\Sites;
 use CraftCms\Cms\Support\Facades\UserGroups;
 use CraftCms\Cms\Support\Facades\Users;
+use CraftCms\Cms\Support\Facades\Volumes;
 use CraftCms\Cms\User\Conditions\AdminConditionRule;
 use CraftCms\Cms\User\Conditions\UserCondition;
 use CraftCms\Cms\User\Data\UserGroup;
@@ -83,14 +85,33 @@ $section = function (string $handle, string $uri) use ($type, $fail) {
 $news = $section('switchboardNews', 'switchboard-news');
 $private = $section('switchboardPrivate', 'switchboard-private');
 
+$volume = Volumes::getVolumeByHandle('switchboardFiles');
+if (! $volume) {
+    $volume = new Volume(['name' => 'Switchboard Files', 'handle' => 'switchboardFiles', 'hasUrls' => true]);
+    $volume->fsHandle = 'public';
+    $volume->subpath = 'switchboard';
+    switchboard_retry(fn () => Volumes::saveVolume($volume)) || $fail('volume', $volume);
+    $volume = Volumes::getVolumeByHandle('switchboardFiles');
+}
+
 $group = UserGroups::getGroupByHandle('switchboardEditors');
 if (! $group) {
     $group = new UserGroup(['name' => 'Switchboard Editors', 'handle' => 'switchboardEditors']);
     switchboard_retry(fn () => UserGroups::saveGroup($group)) || $fail('group', $group);
+    $volume = Volumes::getVolumeByHandle('switchboardFiles');
+    if (! $volume) {
+        $volume = new Volume(['name' => 'Switchboard Files', 'handle' => 'switchboardFiles', 'hasUrls' => true]);
+        $volume->fsHandle = 'public';
+        $volume->subpath = 'switchboard';
+        switchboard_retry(fn () => Volumes::saveVolume($volume)) || $fail('volume', $volume);
+        $volume = Volumes::getVolumeByHandle('switchboardFiles');
+    }
+
     $group = UserGroups::getGroupByHandle('switchboardEditors');
 }
 switchboard_retry(fn () => app(UserPermissions::class)->saveGroupPermissions($group->id, [
     'accessCp', "viewEntries:{$news->uid}", "viewPeerEntries:{$news->uid}", 'editSite:'.Sites::getPrimarySite()->uid,
+    "viewAssets:{$volume->uid}", "viewPeerAssets:{$volume->uid}",
 ]));
 
 $people = [];
@@ -110,16 +131,18 @@ foreach ([
     $user->newPassword = 'switchboard-pass-1';
     $user->active = true;
     $user->pending = false;
-    $user->suspended = false;
     $user->admin = $admin;
     Elements::saveElement($user) || $fail("user {$name}", $user);
     Users::assignUserToGroups($user->id, $groups);
     Users::saveUserPreferences($user, ['language' => $language]);
     $people[$name] = $user->id;
 }
-Users::suspendUser(User::find()->id($people['frozen'])->status(null)->one());
+$frozen = User::find()->id($people['frozen'])->status(null)->one();
+if (! $frozen->suspended) {
+    Users::suspendUser($frozen);
+}
 app(UserPermissions::class)->saveUserPermissions($people['manager'], [
-    'accessCp', 'accessPlugin-switchboard', 'switchboard:manageRules', 'switchboard:viewDeliveries', "viewEntries:{$news->uid}", 'editSite:'.Sites::getPrimarySite()->uid,
+    'accessCp', 'accessPlugin-switchboard', 'switchboard:manageRules', 'switchboard:viewDeliveries', "viewEntries:{$news->uid}", "viewPeerEntries:{$news->uid}", 'editSite:'.Sites::getPrimarySite()->uid,
 ]);
 
-echo json_encode($people + ['group' => $group->uid, 'news' => $news->uid, 'private' => $private->uid, 'newsId' => $news->id, 'privateId' => $private->id, 'type' => $type->id]);
+echo json_encode($people + ['group' => $group->uid, 'news' => $news->uid, 'private' => $private->uid, 'newsId' => $news->id, 'privateId' => $private->id, 'type' => $type->id, 'volume' => $volume->uid]);

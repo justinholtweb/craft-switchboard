@@ -1,0 +1,5 @@
+{# Switchboard harness: the front-end bell (Twig). #}
+<p id="unread">{{ switchboard.unreadCount() }}</p>
+<ul id="items">{% for n in switchboard.notifications(20) %}<li data-id="{{ n.id }}" data-read="{{ n.read ? 1 : 0 }}">{{ n.title }}|{{ n.message }}</li>{% endfor %}</ul>
+<p id="mark">{{ switchboard.markReadUrl() }}</p>
+<p id="feed">{{ switchboard.feedUrl() }}</p>

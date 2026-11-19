@@ -4,6 +4,7 @@
 // plus Switchboard's rules, deliveries and bell notifications for the fixture users.
 // Run with: ddev artisan tinker --execute "require 'storage/switchboard-cleanup.php';"
 
+use CraftCms\Cms\Asset\Elements\Asset;
 use CraftCms\Cms\Entry\Elements\Entry;
 use CraftCms\Cms\Support\Facades\Elements;
 use CraftCms\Cms\Support\Facades\EntryTypes;
@@ -11,6 +12,7 @@ use CraftCms\Cms\Support\Facades\Fields;
 use CraftCms\Cms\Support\Facades\Gql;
 use CraftCms\Cms\Support\Facades\Sections;
 use CraftCms\Cms\Support\Facades\UserGroups;
+use CraftCms\Cms\Support\Facades\Volumes;
 use CraftCms\Cms\User\Elements\User;
 use Illuminate\Support\Facades\DB;
 
@@ -23,6 +25,12 @@ foreach (['switchboardNews', 'switchboardPrivate'] as $h) {
     if ($s = Sections::getSectionByHandle($h)) {
         switchboard_retry(fn () => Sections::deleteSection($s));
     }
+}
+foreach (Asset::find()->volume('switchboardFiles')->status(null)->all() as $a) {
+    Elements::deleteElement($a, true);
+}
+if ($v = Volumes::getVolumeByHandle('switchboardFiles')) {
+    switchboard_retry(fn () => Volumes::deleteVolume($v));
 }
 if ($t = EntryTypes::getEntryTypeByHandle('switchboardArticle')) {
     switchboard_retry(fn () => EntryTypes::deleteEntryType($t));

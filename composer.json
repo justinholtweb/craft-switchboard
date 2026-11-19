@@ -59,6 +59,7 @@
         "sort-packages": true
     },
     "support": {
+        "docs": "https://justinholt.com/plugins/craft-switchboard/docs",
         "issues": "https://github.com/justinholtweb/craft-switchboard/issues",
         "source": "https://github.com/justinholtweb/craft-switchboard"
     },
@@ -67,7 +68,7 @@
         "handle": "switchboard",
         "developer": "Justin Holt",
         "developerUrl": "https://justinholt.com",
-        "documentationUrl": "https://github.com/justinholtweb/craft-switchboard",
+        "documentationUrl": "https://justinholt.com/plugins/craft-switchboard/docs",
         "changelogUrl": "https://raw.githubusercontent.com/justinholtweb/craft-switchboard/main/CHANGELOG.md",
         "class": "JustinHoltWeb\\Switchboard\\Plugin"
     }

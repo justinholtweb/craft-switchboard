@@ -7,6 +7,7 @@ namespace JustinHoltWeb\Switchboard\Http\Controllers;
 use CraftCms\Cms\Http\Responses\CpScreenResponse;
 use CraftCms\Cms\Support\Facades\Elements;
 use CraftCms\Cms\Support\Facades\Sites;
+use CraftCms\Cms\User\Elements\User;
 use Illuminate\Http\Request;
 use JustinHoltWeb\Switchboard\Channels\Channels;
 use JustinHoltWeb\Switchboard\Delivery\Delivery;
@@ -70,8 +71,11 @@ class DeliveriesController
                 'recipient' => $d->recipient,
                 'site' => $d->siteId ? (Sites::getSiteById($d->siteId, true)->handle ?? '') : '',
                 'status' => $d->status,
-                'subject' => (string) $d->subject,
-                'error' => (string) $d->error,
+                // Subjects (and errors) are rendered per recipient, so they can hold fields only
+                // that recipient could see: non-admins only read their own and anonymous ones.
+                'subject' => self::readable($d, $viewer) ? (string) $d->subject : '',
+                'error' => self::readable($d, $viewer) ? (string) $d->error : '',
+                'masked' => ! self::readable($d, $viewer),
                 'attempts' => $d->attempts,
                 'test' => $d->test,
             ])->all();
@@ -89,5 +93,11 @@ class DeliveriesController
                 'total' => $viewer->admin ? $total : null,
                 'hidden' => $hidden,
             ]);
+    }
+
+    /** Admins read every row; others only rows rendered for them, or for an anonymous destination. */
+    private static function readable(Delivery $d, User $viewer): bool
+    {
+        return $viewer->admin || $d->userId === null || $d->userId === (int) $viewer->id;
     }
 }

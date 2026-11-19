@@ -46,7 +46,7 @@ and no error messages from failed jobs. Treat what you route to them as public.
 | Body templates (`_switchboard/`) | ✓ | — |
 | Change or delete a rule with destinations | ✓ | — |
 | Name users as recipients | ✓ | with Craft's “View users”; otherwise only themselves |
-| Delivery log | everything | only deliveries about elements they can view |
+| Delivery log | everything | only deliveries about elements they can view; subjects and errors only for their own deliveries and anonymous destinations (others' are rendered for someone else) |
 
-Conditions only read attributes and fields anyone could see, and **Send test** ignores conditions and answers the
+Conditions only read attributes, fields and related elements anyone could see (a disabled or unpublished related entry reads as empty), and **Send test** ignores conditions and answers the
 same either way, so neither can be used to learn hidden content.

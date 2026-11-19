@@ -195,7 +195,7 @@ class Snapshot
     }
 
     /** A related element: viewable by the recipient, or (anonymous) live with a public URL. */
-    private static function canSee(ElementInterface $related, ?User $recipient): bool
+    public static function canSee(ElementInterface $related, ?User $recipient): bool
     {
         if ($recipient !== null) {
             return rescue(fn () => $related->canView($recipient), false, false);

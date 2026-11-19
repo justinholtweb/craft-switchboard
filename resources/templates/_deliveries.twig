@@ -40,7 +40,7 @@
           <td>{% if d.ruleId %}<a href="{{ cpUrl('switchboard/rules/' ~ d.ruleId) }}">{{ d.rule }}</a>{% else %}{{ d.rule }}{% endif %}<br><small>{{ d.trigger }}{% if d.site %} · {{ d.site }}{% endif %}</small></td>
           <td>{{ d.channel }}</td>
           <td><code>{{ d.recipient }}</code></td>
-          <td>{{ d.subject }}</td>
+          <td>{% if d.masked %}<em class="sb-masked">{{ 'Written for another person'|t('switchboard') }}</em>{% else %}{{ d.subject }}{% endif %}</td>
           <td><span class="sb-status sb-status-{{ d.status }}">{{ d.status }}</span>{% if d.attempts > 1 %} ×{{ d.attempts }}{% endif %}
             {% if d.error %}<br><small class="sb-error">{{ d.error }}</small>{% endif %}</td>
         </tr>

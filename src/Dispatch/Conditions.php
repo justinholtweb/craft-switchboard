@@ -130,6 +130,17 @@ class Conditions
             $value = $value->all();
         }
 
+        // Related elements count only if an anonymous viewer could see them (live, with a
+        // public URL), the same rule as payloads: otherwise a condition on a relation field
+        // would tell the rule's author about disabled or unpublished entries.
+        if ($value instanceof ElementInterface && ! Snapshot::canSee($value, null)) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            $value = array_filter($value, fn ($v) => ! $v instanceof ElementInterface || Snapshot::canSee($v, null));
+        }
+
         return match (true) {
             $value === null => null,
             is_bool($value) => $value ? '1' : '0',

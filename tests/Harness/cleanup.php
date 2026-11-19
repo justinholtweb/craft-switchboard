@@ -35,7 +35,7 @@ if ($v = Volumes::getVolumeByHandle('switchboardFiles')) {
 if ($t = EntryTypes::getEntryTypeByHandle('switchboardArticle')) {
     switchboard_retry(fn () => EntryTypes::deleteEntryType($t));
 }
-foreach (['switchboardSummary', 'switchboardSecret'] as $h) {
+foreach (['switchboardSummary', 'switchboardSecret', 'switchboardRelated'] as $h) {
     if ($f = Fields::getFieldByHandle($h)) {
         switchboard_retry(fn () => Fields::deleteField($f));
     }

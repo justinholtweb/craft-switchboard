@@ -149,4 +149,5 @@ return [
     'Danger zone' => 'Danger zone',
     'Delete this rule?' => 'Delete this rule?',
     'Delete rule' => 'Delete rule',
+    'Written for another person' => 'Written for another person',
 ];

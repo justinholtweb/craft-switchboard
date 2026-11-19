@@ -12,6 +12,7 @@
 use CraftCms\Cms\Asset\Data\Volume;
 use CraftCms\Cms\Entry\Data\EntryType;
 use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Field\Entries;
 use CraftCms\Cms\Field\PlainText;
 use CraftCms\Cms\FieldLayout\FieldLayout;
 use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
@@ -37,17 +38,18 @@ require_once __DIR__.'/switchboard-retry.php';
 
 $fail = fn (string $what, $model) => throw new RuntimeException($what.': '.json_encode(method_exists($model, 'errors') ? $model->errors()->all() : $model));
 
-$field = function (string $handle) use ($fail) {
+$field = function (string $handle, string $type = PlainText::class) use ($fail) {
     if ($f = Fields::getFieldByHandle($handle)) {
         return $f;
     }
-    $f = Fields::createField(['type' => PlainText::class, 'name' => ucfirst($handle), 'handle' => $handle]);
+    $f = Fields::createField(['type' => $type, 'name' => ucfirst($handle), 'handle' => $handle]);
     switchboard_retry(fn () => Fields::saveField($f)) || $fail("field {$handle}", $f);
 
     return Fields::getFieldByHandle($handle);
 };
 $summary = $field('switchboardSummary');
 $secret = $field('switchboardSecret');
+$related = $field('switchboardRelated', Entries::class);
 
 $type = EntryTypes::getEntryTypeByHandle('switchboardArticle');
 if (! $type) {
@@ -55,6 +57,7 @@ if (! $type) {
     $type->setFieldLayout(FieldLayout::createFromConfig(['type' => Entry::class, 'tabs' => [['name' => 'Content', 'elements' => [
         ['type' => TitleField::class],
         ['type' => CustomField::class, 'fieldUid' => $summary->uid],
+        ['type' => CustomField::class, 'fieldUid' => $related->uid],
         ['type' => CustomField::class, 'fieldUid' => $secret->uid, 'userCondition' => [
             'class' => UserCondition::class,
             'conditionRules' => [['class' => AdminConditionRule::class, 'value' => true]],

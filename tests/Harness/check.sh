@@ -129,6 +129,16 @@ php "rule('cond', 'entry.published', ['recipients' => ['admins' => true], 'chann
 C=$(php "echo entry('switchboardNews', 'Charlie Story', ['switchboardSummary' => 'Charlie'])->id;"); runq
 ok "a condition on a field everyone can see works" "$(st "['userId' => $BOSS, 'elementId' => $C]")" "database:sent"
 php "disable_rule('cond');" >/dev/null
+# Relation fields: a condition only sees related elements an anonymous viewer could (live, public).
+php "rule('rel', 'custom:rel', ['recipients' => ['users' => [$BOSS]], 'channels' => ['database'], 'conditions' => [['attribute' => 'switchboardRelated', 'operator' => 'contains', 'value' => 'merger']]]);" >/dev/null
+HIDDEN=$(php "echo entry('switchboardNews', 'Hidden Merger', [], false)->id;")
+NOTE=$(php "echo entry('switchboardNews', 'Public Note', ['switchboardRelated' => [$HIDDEN]])->id;")
+php "app(JustinHoltWeb\Switchboard\Switchboard::class)->fire('rel', CraftCms\Cms\Entry\Elements\Entry::find()->id($NOTE)->one()); echo 1;" >/dev/null; runq
+ok "a condition can't see a disabled related entry's title" "$(php "echo count_deliveries(['trigger' => 'custom:rel']);")" "0"
+php "save_entry($HIDDEN, [], true);" >/dev/null
+php "app(JustinHoltWeb\Switchboard\Switchboard::class)->fire('rel', CraftCms\Cms\Entry\Elements\Entry::find()->id($NOTE)->one()); echo 1;" >/dev/null; runq
+ok "…and matches once that entry is live" "$(st "['trigger' => 'custom:rel', 'userId' => $BOSS]")" "database:sent"
+php "disable_rule('rel');" >/dev/null
 
 # ---- Body templates must live in _switchboard/ (checked again at render time) ----
 php "rule('badtpl', 'custom:bad-template', ['recipients' => ['admins' => true], 'channels' => ['database'], 'template' => 'sb/bell.twig']);" >/dev/null
@@ -291,6 +301,16 @@ ok "manager saves a rule on a section they can view" "$(save "$JM" -d name=M -d 
 MGR=$(php "echo JustinHoltWeb\Switchboard\Rules\Rule::where('handle', 'mgr')->value('id');")
 ok "test send says the same whether or not the element matches" "$(post "$JM" -H 'Accept: application/json' -d id=$MGR -d elementId=$A "$U/admin/switchboard/rules/test" | pyj 'lines[0]["message"]')" "$(post "$JM" -H 'Accept: application/json' -d id=$MGR -d elementId=$C "$U/admin/switchboard/rules/test" | pyj 'lines[0]["message"]')"
 PUB=$(php "echo JustinHoltWeb\Switchboard\Rules\Rule::where('handle', 'pub')->value('id');")
+# Subjects are rendered per recipient: a non-admin reads only their own (and anonymous ones).
+php "rule('subj', 'entry.published', ['sources' => [section_uid('switchboardNews')], 'recipients' => ['users' => [$BOSS, $MANAGER]], 'channels' => ['database'], 'payloadFields' => ['switchboardSecret'], 'subject' => 'S {{ element.fields.switchboardSecret ?? \"hidden\" }}']);" >/dev/null
+php "echo entry('switchboardNews', 'Subject Leak', ['switchboardSecret' => 'LEAKY-SUBJ'])->id;" >/dev/null; runq
+SUBJ=$(php "echo JustinHoltWeb\Switchboard\Rules\Rule::where('handle', 'subj')->value('id');")
+SLOG=$(get "$JM" "$U/admin/switchboard/deliveries?rule=$SUBJ")
+hasnt "manager's log never shows a subject rendered for someone else" "$SLOG" "LEAKY-SUBJ"
+has "…shows their own" "$SLOG" "S hidden"
+has "…and marks the other as written for another person" "$SLOG" "Written for another person"
+has "admin's log shows both" "$(get "$JA" "$U/admin/switchboard/deliveries?rule=$SUBJ")" "LEAKY-SUBJ"
+php "disable_rule('subj');" >/dev/null
 MLOG=$(get "$JM" "$U/admin/switchboard/deliveries?rule=$PUB")
 hasnt "manager's delivery log hides deliveries about content they can't view" "$MLOG" "Private Plan"
 has "…but shows the ones they can" "$MLOG" "Alpha Story"

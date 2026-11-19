@@ -1,0 +1,221 @@
+{# Switchboard → rule edit screen #}
+<style>
+  .sb-form { display: grid; gap: 1.5rem; max-width: 60rem; }
+  .sb-form fieldset { border: 1px solid var(--gray-200, #e3e5e8); border-radius: 6px; padding: 1rem 1.25rem; display: grid; gap: 1rem; }
+  .sb-form legend { font-weight: 600; padding: 0 .35rem; }
+  .sb-field { display: grid; gap: .3rem; }
+  .sb-field > label, .sb-label { font-weight: 600; }
+  .sb-hint { font-size: .85em; opacity: .75; margin: 0; }
+  .sb-field input[type=text], .sb-field textarea, .sb-field select { width: 100%; max-width: 40rem; }
+  .sb-error { color: var(--error-color, #cf1124); font-size: .9em; margin: 0; }
+  .sb-checks { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+  .sb-rows { border-collapse: collapse; }
+  .sb-rows td { padding: .25rem .5rem .25rem 0; vertical-align: top; }
+  .sb-note { padding: .5rem .75rem; border-radius: 4px; background: var(--gray-050, #f3f7fc); }
+  .sb-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+</style>
+
+<form method="post" action="{{ cpUrl('switchboard/rules/save') }}" class="sb-form" id="switchboard-rule-form">
+  {{ csrf_field() }}
+  <input type="hidden" name="id" value="{{ form.id }}">
+
+  <fieldset>
+    <legend>{{ 'Rule'|t('switchboard') }}</legend>
+    <div class="sb-field">
+      <label for="sb-name">{{ 'Name'|t('switchboard') }}</label>
+      <input class="text" type="text" id="sb-name" name="name" value="{{ form.name }}" maxlength="255" required>
+      {% if errors.name ?? null %}<p class="sb-error">{{ errors.name }}</p>{% endif %}
+    </div>
+    <div class="sb-field">
+      <label for="sb-handle">{{ 'Handle'|t('switchboard') }}</label>
+      <input class="text code" type="text" id="sb-handle" name="handle" value="{{ form.handle }}" maxlength="64" pattern="[a-z][a-zA-Z0-9_\-]*" required>
+      {% if errors.handle ?? null %}<p class="sb-error" id="sb-handle-error">{{ errors.handle }}</p>{% endif %}
+    </div>
+    <div class="sb-field">
+      <label><input type="checkbox" name="enabled" value="1" {{ form.enabled ? 'checked' }}> {{ 'Enabled'|t('switchboard') }}</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ 'When'|t('switchboard') }}</legend>
+    {% set isCustom = form.trigger starts with 'custom:' %}
+    <div class="sb-field">
+      <label for="sb-trigger">{{ 'Trigger'|t('switchboard') }}</label>
+      <select id="sb-trigger" name="trigger">
+        {% for key, trigger in triggers %}
+          <option value="{{ key }}" {{ form.trigger == key ? 'selected' }}>{{ trigger.label }}</option>
+        {% endfor %}
+        <option value="custom" {{ isCustom ? 'selected' }}>{{ 'Custom (fired from code)'|t('switchboard') }}</option>
+      </select>
+      {% if errors.trigger ?? null %}<p class="sb-error">{{ errors.trigger }}</p>{% endif %}
+    </div>
+    <div class="sb-field">
+      <label for="sb-custom">{{ 'Custom trigger name'|t('switchboard') }}</label>
+      <input class="text code" type="text" id="sb-custom" name="customTrigger" value="{{ isCustom ? form.trigger|slice(7) : '' }}" maxlength="64" placeholder="order-shipped">
+      <p class="sb-hint">{{ 'With “Custom”: fire it from PHP with `app(Switchboard::class)->fire(\'order-shipped\', $element, $data)`.'|t('switchboard') }}</p>
+    </div>
+
+    {% if sites|length > 1 %}
+      <div class="sb-field">
+        <span class="sb-label">{{ 'Sites'|t('switchboard') }}</span>
+        <div class="sb-checks">
+          {% for site in sites %}
+            <label><input type="checkbox" name="sites[]" value="{{ site.id }}" {{ form.sites is empty or site.id in form.sites ? 'checked' }}> {{ site.name }} <code>{{ site.handle }}</code></label>
+          {% endfor %}
+        </div>
+        <p class="sb-hint">{{ 'Entry triggers (and custom triggers given a site) only fire for content on these sites.'|t('switchboard') }}</p>
+        {% if errors['sites.0'] ?? errors.sites ?? null %}<p class="sb-error">{{ errors['sites.0'] ?? errors.sites }}</p>{% endif %}
+      </div>
+    {% endif %}
+
+    {% for kind, label in {sections: 'Sections (entry triggers)'|t('switchboard'), volumes: 'Volumes (asset triggers)'|t('switchboard'), groups: 'User groups (user triggers)'|t('switchboard')} %}
+      {% if sources[kind] is not empty %}
+        <div class="sb-field" data-kind="{{ kind }}">
+          <span class="sb-label">{{ label }}</span>
+          <div class="sb-checks">
+            {% for uid, name in sources[kind] %}
+              <label><input type="checkbox" name="sources[{{ kind }}][]" value="{{ uid }}" {{ uid in form.sources ? 'checked' }}> {{ name }}</label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+    <p class="sb-hint">{{ 'Only the sources that fit the trigger count. None ticked: all of them.'|t('switchboard') }}</p>
+
+    <div class="sb-field">
+      <span class="sb-label">{{ 'Conditions'|t('switchboard') }}</span>
+      <table class="sb-rows" id="sb-conditions">
+        {% set rows = form.conditions|merge([{}, {}]) %}
+        {% for row in rows %}
+          <tr>
+            <td><input class="text code" type="text" name="conditions[{{ loop.index0 }}][attribute]" value="{{ row.attribute ?? '' }}" placeholder="title" aria-label="{{ 'Attribute or field handle'|t('switchboard') }}"></td>
+            <td><select name="conditions[{{ loop.index0 }}][operator]" aria-label="{{ 'Operator'|t('switchboard') }}">
+              {% for op in operators %}<option value="{{ op }}" {{ (row.operator ?? 'equals') == op ? 'selected' }}>{{ op }}</option>{% endfor %}
+            </select></td>
+            <td><input class="text" type="text" name="conditions[{{ loop.index0 }}][value]" value="{{ row.value ?? '' }}" aria-label="{{ 'Value'|t('switchboard') }}"></td>
+          </tr>
+        {% endfor %}
+      </table>
+      <p class="sb-hint">{{ 'All must match. Attributes: title, slug, uri, status, section, type, volume, filename, username, email, or a custom field handle (failed jobs: job, queue, connection, exception). Case-insensitive; blank rows are ignored.'|t('switchboard') }}</p>
+      {% if errors['conditions.0.attribute'] ?? null %}<p class="sb-error">{{ errors['conditions.0.attribute'] }}</p>{% endif %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ 'Who'|t('switchboard') }}</legend>
+    <p class="sb-note">{{ 'Craft users are only notified about elements they can view (and, on multi-site installs, sites they can access). Failed-job notifications only reach admins.'|t('switchboard') }}</p>
+    <div class="sb-field">
+      <label for="sb-users">{{ 'Users'|t('switchboard') }}</label>
+      <textarea class="text" id="sb-users" name="users" rows="2" placeholder="editor&#10;someone@example.com">{{ form.users }}</textarea>
+      <p class="sb-hint">{{ 'Usernames, emails or IDs, one per line.'|t('switchboard') }}</p>
+      {% if errors.users ?? null %}<p class="sb-error" id="sb-users-error">{{ errors.users }}</p>{% endif %}
+    </div>
+    {% if groups is not empty %}
+      <div class="sb-field">
+        <span class="sb-label">{{ 'User groups'|t('switchboard') }}</span>
+        <div class="sb-checks">
+          {% for group in groups %}
+            <label><input type="checkbox" name="groups[]" value="{{ group.uid }}" {{ group.uid in form.groups ? 'checked' }}> {{ group.name }}</label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+    <div class="sb-checks">
+      <label><input type="checkbox" name="admins" value="1" {{ form.admins ? 'checked' }}> {{ 'Admins'|t('switchboard') }}</label>
+      <label><input type="checkbox" name="authors" value="1" {{ form.authors ? 'checked' }}> {{ 'The entry’s authors'|t('switchboard') }}</label>
+      <label><input type="checkbox" name="subjectUser" value="1" {{ form.subjectUser ? 'checked' }}> {{ 'The user it’s about (user triggers)'|t('switchboard') }}</label>
+    </div>
+    <div class="sb-field">
+      <span class="sb-label">{{ 'Channels for these users'|t('switchboard') }}</span>
+      <div class="sb-checks">
+        {% for key, label in userChannels %}
+          <label><input type="checkbox" name="channels[]" value="{{ key }}" {{ key in form.channels ? 'checked' }}> {{ label }}</label>
+        {% endfor %}
+      </div>
+      <p class="sb-hint">{{ 'Each user gets the message in their preferred language (their account preference), else the site’s.'|t('switchboard') }}</p>
+    </div>
+
+    <div class="sb-field" id="sb-routes">
+      <span class="sb-label">{{ 'Ad-hoc destinations'|t('switchboard') }}</span>
+      {% if isAdmin %}
+        <table class="sb-rows">
+          {% for row in form.routes|merge([{}, {}]) %}
+            <tr>
+              <td><select name="routes[{{ loop.index0 }}][channel]" aria-label="{{ 'Channel'|t('switchboard') }}">
+                <option value=""></option>
+                {% for key, ch in routeChannels %}<option value="{{ key }}" {{ (row.channel ?? '') == key ? 'selected' }}>{{ ch.label }}</option>{% endfor %}
+              </select></td>
+              <td><input class="text code" type="text" name="routes[{{ loop.index0 }}][to]" value="{{ row.to ?? '' }}" size="60" placeholder="https://hooks.slack.com/services/… or $SWITCHBOARD_SLACK_URL" aria-label="{{ 'Destination'|t('switchboard') }}"></td>
+            </tr>
+          {% endfor %}
+        </table>
+        <p class="sb-hint">{{ 'An email address, a Slack/Discord/Teams/webhook URL, or a phone number. Or `$SWITCHBOARD_…` to read it from an environment variable. These are anonymous viewers: they get public information only (no conditional fields, no email addresses). An email that belongs to a Craft user is treated as that user. Webhooks only reach public HTTPS addresses.'|t('switchboard') }}</p>
+        {% if errors.routes ?? null %}<p class="sb-error" id="sb-routes-error">{{ errors.routes }}</p>{% endif %}
+      {% else %}
+        {% for row in form.routes %}<p><code>{{ row.channel }}</code> {{ row.to }}</p>{% else %}<p class="sb-hint">{{ 'None.'|t('switchboard') }}</p>{% endfor %}
+        <p class="sb-hint">{{ 'Only admins can change ad-hoc destinations.'|t('switchboard') }}</p>
+      {% endif %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{{ 'Message'|t('switchboard') }}</legend>
+    <div class="sb-field">
+      <label for="sb-subject">{{ 'Subject'|t('switchboard') }}</label>
+      <input class="text" type="text" id="sb-subject" name="subject" value="{{ form.subject }}" placeholder="{{ 'Published: {{ element.title }}' }}">
+    </div>
+    <div class="sb-field">
+      <label for="sb-body">{{ 'Body'|t('switchboard') }}</label>
+      <textarea class="text code" id="sb-body" name="body" rows="5">{{ form.body }}</textarea>
+      <p class="sb-hint">{{ 'Sandboxed Twig, plain text. Variables: `element` (title, url, status, section, author, fields…), `event`, `rule`, `site`, `recipient`, `data`. Use `|t` with your site translations to localize. Blank: a default message in the recipient’s language.'|t('switchboard') }}</p>
+    </div>
+    <div class="sb-field">
+      <label for="sb-template">{{ 'Body template'|t('switchboard') }}</label>
+      <input class="text code" type="text" id="sb-template" name="template" value="{{ form.template }}" placeholder="_notifications/published.twig">
+      <p class="sb-hint">{{ 'Instead of the body: a site template in Twig (.twig) or Blade (.blade.php). Same variables, plus `object` (the element itself).'|t('switchboard') }}</p>
+      {% if errors.template ?? null %}<p class="sb-error">{{ errors.template }}</p>{% endif %}
+    </div>
+    <div class="sb-field">
+      <label for="sb-fields">{{ 'Fields to include'|t('switchboard') }}</label>
+      <input class="text code" type="text" id="sb-fields" name="payloadFields" value="{{ form.payloadFields }}" placeholder="summary, category">
+      <p class="sb-hint">{{ 'Custom fields available as `element.fields` and in webhook payloads. A field is left out for anyone who couldn’t see it in the element editor.'|t('switchboard') }}</p>
+    </div>
+    {% if secret %}
+      <div class="sb-field">
+        <span class="sb-label">{{ 'Webhook signing secret'|t('switchboard') }}</span>
+        <p><code id="sb-secret">{{ secret }}</code></p>
+        <label><input type="checkbox" name="rotateSecret" value="1"> {{ 'Generate a new secret on save'|t('switchboard') }}</label>
+        <p class="sb-hint">{{ 'Webhook requests carry `Switchboard-Signature: t=<time>,v1=<HMAC-SHA256 of "<time>.<body>">`.'|t('switchboard') }}</p>
+      </div>
+    {% endif %}
+  </fieldset>
+
+  <div><button type="submit" class="btn submit">{{ 'Save'|t('switchboard') }}</button></div>
+</form>
+
+{% if not isNew %}
+  <div class="sb-form" style="margin-top: 2rem">
+    <fieldset id="sb-test">
+      <legend>{{ 'Send a test'|t('switchboard') }}</legend>
+      <form method="post" action="{{ cpUrl('switchboard/rules/test') }}" class="sb-row">
+        {{ csrf_field() }}
+        <input type="hidden" name="id" value="{{ form.id }}">
+        <div class="sb-field"><label for="sb-test-element">{{ 'Element ID (optional)'|t('switchboard') }}</label><input class="text" type="text" id="sb-test-element" name="elementId" inputmode="numeric" pattern="[0-9]*" size="10"></div>
+        {% if isAdmin %}<label><input type="checkbox" name="destinations" value="1"> {{ 'Also post to the ad-hoc destinations'|t('switchboard') }}</label>{% endif %}
+        <button type="submit" class="btn">{{ 'Send test to me'|t('switchboard') }}</button>
+      </form>
+      <p class="sb-hint">{{ 'Sends this rule’s message to you through its channels, about that element or the newest one that matches.'|t('switchboard') }}</p>
+    </fieldset>
+    <fieldset>
+      <legend>{{ 'Danger zone'|t('switchboard') }}</legend>
+      <div class="sb-row">
+        <a class="btn" href="{{ cpUrl('switchboard/deliveries', {rule: form.id}) }}">{{ 'Deliveries'|t('switchboard') }}</a>
+        <form method="post" action="{{ cpUrl('switchboard/rules/delete') }}" onsubmit="return confirm({{ 'Delete this rule?'|t('switchboard')|json_encode }})">
+          {{ csrf_field() }}
+          <input type="hidden" name="id" value="{{ form.id }}">
+          <button type="submit" class="btn">{{ 'Delete rule'|t('switchboard') }}</button>
+        </form>
+      </div>
+    </fieldset>
+  </div>
+{% endif %}

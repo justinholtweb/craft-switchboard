@@ -1,0 +1,56 @@
+{# Switchboard → delivery log #}
+<style>
+  .sb-log { width: 100%; border-collapse: collapse; font-size: .92em; }
+  .sb-log th, .sb-log td { text-align: left; padding: .35rem .6rem .35rem 0; border-bottom: 1px solid var(--gray-100, #edf0f3); vertical-align: top; }
+  .sb-status { display: inline-block; padding: 0 .4rem; border-radius: 3px; font-size: .85em; }
+  .sb-status-sent { background: #e3f5e8; color: #1d6b38; }
+  .sb-status-failed { background: #fde8ea; color: #a01120; }
+  .sb-status-skipped { background: #f1f1f1; color: #555; }
+  .sb-status-queued, .sb-status-sending { background: #fdf4dc; color: #7a5a00; }
+  .sb-filters { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; margin-bottom: 1rem; }
+  .sb-pages { margin-top: 1rem; display: flex; gap: .75rem; }
+</style>
+
+<form method="get" action="{{ cpUrl('switchboard/deliveries') }}" class="sb-filters" id="sb-filters">
+  <label>{{ 'Rule'|t('switchboard') }}
+    <select name="rule"><option value="">{{ 'All rules'|t('switchboard') }}</option>
+      {% for r in rules %}<option value="{{ r.id }}" {{ ruleId == r.id ? 'selected' }}>{{ r.name }}</option>{% endfor %}
+    </select></label>
+  <label>{{ 'Status'|t('switchboard') }}
+    <select name="status"><option value="">{{ 'Any'|t('switchboard') }}</option>
+      {% for s in statuses %}<option value="{{ s }}" {{ status == s ? 'selected' }}>{{ s }}</option>{% endfor %}
+    </select></label>
+  <button type="submit" class="btn">{{ 'Filter'|t('switchboard') }}</button>
+  <span id="sb-total">{{ '{total} deliveries'|t('switchboard', {total: total}) }}</span>
+</form>
+
+{% if rows is empty %}
+  <p>{{ 'Nothing delivered yet.'|t('switchboard') }}</p>
+{% else %}
+  <table class="sb-log" id="sb-log">
+    <thead><tr>
+      <th>{{ 'When'|t('switchboard') }}</th><th>{{ 'Rule'|t('switchboard') }}</th><th>{{ 'Channel'|t('switchboard') }}</th>
+      <th>{{ 'To'|t('switchboard') }}</th><th>{{ 'Subject'|t('switchboard') }}</th><th>{{ 'Status'|t('switchboard') }}</th>
+    </tr></thead>
+    <tbody>
+      {% for d in rows %}
+        <tr data-status="{{ d.status }}" data-channel="{{ d.channel }}">
+          <td>{{ d.date }} UTC{% if d.test %} · {{ 'test'|t('switchboard') }}{% endif %}</td>
+          <td>{% if d.ruleId %}<a href="{{ cpUrl('switchboard/rules/' ~ d.ruleId) }}">{{ d.rule }}</a>{% else %}{{ d.rule }}{% endif %}<br><small>{{ d.trigger }}{% if d.site %} · {{ d.site }}{% endif %}</small></td>
+          <td>{{ d.channel }}</td>
+          <td><code>{{ d.recipient }}</code></td>
+          <td>{{ d.subject }}</td>
+          <td><span class="sb-status sb-status-{{ d.status }}">{{ d.status }}</span>{% if d.attempts > 1 %} ×{{ d.attempts }}{% endif %}
+            {% if d.error %}<br><small class="sb-error">{{ d.error }}</small>{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if pages > 1 %}
+    <div class="sb-pages">
+      {% if page > 1 %}<a href="{{ cpUrl('switchboard/deliveries', {rule: ruleId ?: null, status: status ?: null, page: page - 1}) }}">← {{ 'Newer'|t('switchboard') }}</a>{% endif %}
+      <span>{{ page }} / {{ pages }}</span>
+      {% if page < pages %}<a href="{{ cpUrl('switchboard/deliveries', {rule: ruleId ?: null, status: status ?: null, page: page + 1}) }}">{{ 'Older'|t('switchboard') }} →</a>{% endif %}
+    </div>
+  {% endif %}
+{% endif %}

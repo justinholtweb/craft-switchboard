@@ -62,5 +62,6 @@ A safety limit (`maxRecipients`, default 500) caps how many people one rule noti
 Two permissions: **Manage notification rules** and **View the delivery log**. People who aren't admins:
 
 - build rules only on sources they can view themselves, and must name them; failed-job and custom triggers are admin-only
+- can name other users as recipients only if they have Craft's “View users” permission
 - can't add ad-hoc destinations or choose a body template, and can't change or delete a rule that has destinations
 - see only deliveries about elements they can view in the delivery log

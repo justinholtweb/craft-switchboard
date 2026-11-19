@@ -45,6 +45,7 @@ and no error messages from failed jobs. Treat what you route to them as public.
 | Ad-hoc destinations | ✓ | — |
 | Body templates (`_switchboard/`) | ✓ | — |
 | Change or delete a rule with destinations | ✓ | — |
+| Name users as recipients | ✓ | with Craft's “View users”; otherwise only themselves |
 | Delivery log | everything | only deliveries about elements they can view |
 
 Conditions only read attributes and fields anyone could see, and **Send test** ignores conditions and answers the

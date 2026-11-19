@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!-- handmade: hand-tuned deck -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Switchboard — Plugin Store promos</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --charcoal: #0f0f1a;
+    --charcoal-light: #1a1a2e;
+    --charcoal-lighter: #252540;
+    --accent: #596071;
+    --accent-light: #A9B8D6;
+    --gold: #f5b041;
+    --off-white: #f0f0f5;
+  }
+
+  html { background: #000; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--off-white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- slide shell ---------------------------------------------------- */
+  .slide {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 85% 15%, rgba(106, 123, 160, 0.34) 0%, transparent 40%),
+      radial-gradient(ellipse at 65% 5%,  rgba(169, 184, 214, 0.14) 0%, transparent 35%),
+      radial-gradient(ellipse at 15% 85%, rgba(245, 176, 65, 0.07) 0%, transparent 40%),
+      radial-gradient(ellipse at 35% 95%, rgba(106, 123, 160, 0.14) 0%, transparent 35%),
+      linear-gradient(135deg, #0f0f1a 0%, #10131c 30%, #141a26 60%, #0f0f1a 100%);
+  }
+
+  /* Oversized watermark: the mark with the tile stripped, because a rounded square at this
+     size reads as a grey box across the slide rather than as the icon. Anchored bottom-right and
+     running off the right and bottom edges. It is the panel's outline (stroked icon-mask paths): filled, it reads as a grey block. */
+  .slide::after {
+    content: '';
+    position: absolute;
+    top: 22%;
+    right: -22%;
+    width: 1400px;
+    height: 1400px;
+    background: url('assets/watermark.svg') no-repeat center / contain;
+    opacity: 0.05;
+    pointer-events: none;
+  }
+
+  /* The cover has the icon itself; a watermark behind it reads as its shadow. */
+  .cover::after { display: none; }
+
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--gold), var(--accent));
+    z-index: 5;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 118px 130px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ---- type ------------------------------------------------------------ */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(240, 240, 245, 0.62);
+    margin-bottom: 34px;
+  }
+  .eyebrow .rule {
+    width: 58px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-light);
+  }
+
+  h1, h2 {
+    font-family: 'Jersey 20', sans-serif;
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: 0.005em;
+  }
+
+  .gradient-text {
+    background: linear-gradient(100deg, #8A9BC0 0%, #A9B8D6 40%, #E2E9F5 68%, #8A9BC0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lede {
+    font-size: 34px;
+    line-height: 1.5;
+    color: rgba(240, 240, 245, 0.72);
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  /* ---- cover ----------------------------------------------------------- */
+  .cover .inner { gap: 90px; }
+  .cover .copy { flex: 1 1 auto; }
+  .cover h1 { font-size: 168px; margin-bottom: 26px; }
+  .cover .tagline {
+    font-size: 46px;
+    line-height: 1.25;
+    color: rgba(240, 240, 245, 0.78);
+    margin-bottom: 46px;
+    max-width: 900px;
+  }
+  .cover .badges { display: flex; gap: 18px; align-items: center; }
+  .badge {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 14px 26px;
+    border-radius: 999px;
+    border: 2px solid rgba(169, 184, 214, 0.45);
+    color: rgba(240, 240, 245, 0.85);
+  }
+  .badge.free { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cover .mark { flex: 0 0 auto; }
+  .cover .mark img { width: 420px; height: 420px; display: block; }
+
+  /* ---- feature slides -------------------------------------------------- */
+  .feature .inner { padding-right: 0; }
+  .feature .copy { width: 760px; flex: 0 0 auto; }
+  .feature h2 { font-size: 96px; margin-bottom: 30px; }
+  .feature .lede { max-width: 700px; }
+
+  .points { list-style: none; margin-top: 40px; display: flex; flex-direction: column; gap: 20px; }
+  .points li {
+    display: flex;
+    gap: 16px;
+    font-size: 25px;
+    line-height: 1.4;
+    color: rgba(240, 240, 245, 0.6);
+  }
+  .points li svg { flex: 0 0 auto; margin-top: 4px; }
+
+  /* ---- screenshot slabs ------------------------------------------------ */
+  .shot {
+    position: absolute;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .shot .chrome {
+    height: 40px;
+    background: #2a2a3e;
+    background-image:
+      radial-gradient(circle at 24px 20px, #ff5f57 6px, transparent 6.5px),
+      radial-gradient(circle at 48px 20px, #ffbd2e 6px, transparent 6.5px),
+      radial-gradient(circle at 72px 20px, #28ca42 6px, transparent 6.5px);
+  }
+  .shot .viewport { overflow: hidden; background: #e4edf6; position: relative; }
+  .shot img { display: block; width: 100%; position: absolute; left: 0; }
+
+  .caption {
+    font-size: 22px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(240, 240, 245, 0.5);
+    margin-bottom: 14px;
+  }
+  .caption b { color: var(--accent-light); font-weight: 600; }
+
+  /* ---- before / after -------------------------------------------------- */
+  .compare .inner { flex-direction: column; align-items: flex-start; padding-bottom: 60px; }
+  .compare h2 { font-size: 88px; margin-bottom: 18px; }
+  .compare .lede { font-size: 30px; max-width: 1280px; margin-bottom: 44px; }
+  .compare .pair { display: flex; gap: 56px; width: 100%; }
+  .compare .pane { flex: 1 1 0; min-width: 0; }
+  .compare .shot { position: relative; }
+
+  .arrow {
+    position: absolute;
+    left: 50%;
+    top: 640px;
+    transform: translateX(-50%);
+    z-index: 4;
+    width: 92px;
+    height: 92px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 12px 40px rgba(106, 123, 160, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---- closing panel --------------------------------------------------- */
+  .closing .inner { flex-direction: column; align-items: flex-start; justify-content: center; }
+  .closing h2 { font-size: 104px; margin-bottom: 34px; }
+  .closing .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px 54px;
+    margin-top: 20px;
+    width: 1420px;
+  }
+  .closing .cell {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(37, 37, 64, 0.42);
+    padding: 28px 32px;
+  }
+  .closing .cell b { display: block; font-size: 28px; margin-bottom: 8px; color: var(--off-white); }
+  .closing .cell span { font-size: 23px; line-height: 1.45; color: rgba(240, 240, 245, 0.58); }
+
+  /* ---- layout diagram slide -------------------------------------------- */
+  .diagram {
+    position: absolute;
+    right: 130px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 800px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(15, 15, 26, 0.72);
+    padding: 44px 48px;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 26px;
+    line-height: 1.65;
+    color: rgba(240, 240, 245, 0.72);
+    white-space: pre;
+  }
+  .diagram .tab { color: var(--off-white); font-weight: 600; }
+  .diagram .marker { color: var(--accent-light); }
+  .diagram .dim { color: rgba(240, 240, 245, 0.38); }
+  .diagram .gold { color: var(--gold); }
+
+  /* ---- footer lockup --------------------------------------------------- */
+  .footer {
+    position: absolute;
+    left: 130px;
+    bottom: 54px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 22px;
+    color: rgba(240, 240, 245, 0.42);
+  }
+  .footer img { width: 40px; height: 40px; border-radius: 9px; }
+  .footer b { color: rgba(240, 240, 245, 0.72); font-weight: 600; }
+
+  /* Only render the requested slide when screenshotting */
+  body.single .slide { display: none; }
+  body.single .slide.active { display: block; }
+
+  
+  .ck { flex: 0 0 auto; margin-top: 4px; }
+  .badge.beta { border-color: rgba(245, 176, 65, 0.7); color: #f8d48a; background: rgba(245, 176, 65, 0.10); }
+  .caution {
+    position: absolute; left: 130px; right: 130px; top: 40px; z-index: 4;
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 24px; border-radius: 12px;
+    background: rgba(245, 176, 65, 0.10); border: 1px solid rgba(245, 176, 65, 0.42);
+    font-size: 23px; color: #f8d48a;
+  }
+  .panel {
+    position: absolute; right: 120px; top: 50%; transform: translateY(-50%);
+    width: 960px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.09);
+    background: rgba(15, 15, 26, 0.78); padding: 38px 44px;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 22px; line-height: 1.75; color: rgba(240,240,245,0.70); white-space: pre;
+  }
+  .panel .c { color: rgba(240,240,245,0.38); }
+  .panel .k { color: var(--accent-light); }
+  .panel .s { color: #9fe0b8; }
+  .panel .h { color: rgba(240,240,245,0.42); font-size: 17px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .panel .bad { color: #ff8b8b; }
+  .panel .warn { color: #f8d48a; }
+  .panel .ok { color: #5ee0a0; }
+  .states { position: absolute; right: 120px; top: 50%; transform: translateY(-50%); width: 900px; display: flex; flex-direction: column; gap: 18px; }
+  .state { display: flex; align-items: center; justify-content: space-between; border-radius: 12px; border: 1px solid rgba(255,255,255,0.09); background: rgba(15,15,26,0.72); padding: 22px 32px; font-size: 26px; }
+  .state b { color: var(--off-white); font-weight: 600; }
+  .state span { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 22px; }
+  .state.in span { color: #5ee0a0; }
+  .state.out span { color: rgba(240,240,245,0.42); }
+  .where .inner { flex-direction: column; align-items: flex-start; justify-content: center; }
+  .where h2 { font-size: 96px; margin-bottom: 26px; }
+  .where .lede { max-width: 1300px; font-size: 31px; margin-bottom: 50px; }
+  .where .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; width: 1660px; }
+  .where .card { border-radius: 14px; padding: 34px 36px; }
+  .where .card b { display: flex; align-items: center; gap: 14px; font-size: 32px; margin-bottom: 12px; color: var(--off-white); }
+  .where .card span { display: block; font-size: 23px; line-height: 1.5; color: rgba(240,240,245,0.6); }
+  .where .card.new { border-color: var(--accent-light); }
+  .where .card .tag { font-size: 16px; font-weight: 700; font-style: normal; letter-spacing: 0.14em; text-transform: uppercase; color: #fff; border-radius: 999px; padding: 6px 14px; margin-left: auto; }
+  .where .alone { margin-top: 38px; font-size: 24px; color: rgba(240,240,245,0.45); }
+  .where .alone b { color: rgba(240,240,245,0.7); font-weight: 600; }
+  .where .card { border: 1px solid; border-color: rgba(169,184,214,0.32); background: rgba(106,123,160,0.20); }
+  .where .card .tag { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- 1 · Cover -->
+<section class="slide cover" data-n="1">
+  <div class="caution"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5b041" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg> Craft 6 is still in beta, and so is Switchboard (6.0.0-beta.1). Use caution on production sites.</div>
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Craft CMS 6 · Beta</div>
+      <h1 class="gradient-text">Switchboard</h1>
+      <p class="tagline">Notification rules for Craft 6 —<br>the right people, the right channel.</p>
+      <div class="badges"><span class="badge free">Free</span><span class="badge beta">Craft 6 beta</span></div>
+    </div>
+    <div class="mark"><img src="assets/icon.svg" alt=""></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 2 · Rules -->
+<section class="slide feature" data-n="2">
+  <div class="inner"><div class="copy" style="width: 640px;">
+    <div class="eyebrow"><span class="rule"></span> Rules in the CP</div>
+    <h2>When this<br>happens…</h2>
+    <p class="lede" style="max-width: 600px;">Pick a trigger, sites, sections and conditions. No code.</p>
+    <ul class="points"><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Scheduled posts announced when they go live</span></li><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Your own events with Switchboard::fire()</span></li></ul>
+  </div></div>
+  <div class="states">
+    <div class="state in"><b>An entry is published</b><span>entry.published</span></div>
+    <div class="state in"><b>A live entry is updated</b><span>entry.updated</span></div>
+    <div class="state in"><b>A user account is created</b><span>user.registered</span></div>
+    <div class="state in"><b>An asset is uploaded</b><span>asset.uploaded</span></div>
+    <div class="state in"><b>A queued job fails</b><span>queue.failed</span></div>
+    <div class="state in"><b>Your order shipped</b><span>custom:order-shipped</span></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 3 · Channels -->
+<section class="slide where" data-n="3">
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> Laravel notifications</div>
+    <h2>…tell them<br>where they are</h2>
+    <p class="lede">Every delivery is a queued, retried Laravel notification — logged, with failures on the sidebar.</p>
+    <div class="cards">
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> The bell</b><span>Craft 6’s own control panel bell, plus a front-end bell in Twig or Blade.</span></div>
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> Email &amp; SMS</b><span>Through Craft’s mailer; SMS via Vonage or Twilio when installed.</span></div>
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> Slack · Discord · Teams</b><span>Formatted for each, with mentions disabled on Discord.</span></div>
+    </div>
+    <p class="alone"><b>And any Laravel channel:</b> register a laravel-notification-channels package with one listener.</p>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 4 · Permissions -->
+<section class="slide feature" data-n="4">
+  <div class="inner"><div class="copy" style="width: 640px;">
+    <div class="eyebrow"><span class="rule"></span> Permission-aware</div>
+    <h2>Nobody hears<br>what they<br>can’t see</h2>
+    <p class="lede" style="max-width: 600px;">Craft’s own permissions, checked for every recipient.</p>
+    <ul class="points"><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Fields behind user conditions stay out</span></li><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Webhooks and Slack get public info only</span></li></ul>
+  </div></div>
+  <div class="panel"><span class="h">Deliveries · “News published”</span>
+
+<span class="k">ada</span>      bell + email   <span class="ok">sent</span>
+<span class="k">bruno</span>    bell + email   <span class="ok">sent</span>   <span class="c">in French</span>
+<span class="k">carla</span>    bell           <span class="warn">skipped</span>  <span class="c">can’t view this element</span>
+<span class="k">dmitri</span>   bell           <span class="warn">skipped</span>  <span class="c">not an active user</span>
+<span class="k">#news</span>    Slack          <span class="ok">sent</span>   <span class="c">hooks.slack.com</span>
+<span class="k">CRM</span>      webhook        <span class="ok">sent</span>   <span class="c">signed</span></div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 5 · Languages + templates -->
+<section class="slide feature" data-n="5">
+  <div class="inner"><div class="copy" style="width: 640px;">
+    <div class="eyebrow"><span class="rule"></span> Messages</div>
+    <h2>In their<br>own language</h2>
+    <p class="lede" style="max-width: 600px;">Rendered per recipient, in their preferred language.</p>
+    <ul class="points"><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Sandboxed Twig in the rule</span></li><li><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="t">Or a Twig or Blade template file</span></li></ul>
+  </div></div>
+  <div class="panel"><span class="c">{# Subject #}</span>
+{{ <span class="s">'Published: {title}'</span>|t(<span class="s">'switchboard'</span>, {title: element.title}) }}
+
+<span class="h">ada · en</span>
+Published: Spring menu
+<span class="h">bruno · fr</span>
+Publié : Spring menu
+
+<span class="c">{{-- _switchboard/published.blade.php --}}</span>
+{{ <span class="k">$element</span>['title'] }} — {{ <span class="k">$element</span>['url'] }}</div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 6 · Webhooks -->
+<section class="slide where" data-n="6">
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> Webhooks</div>
+    <h2>Signed, and never<br>turned inward</h2>
+    <p class="lede">Outbound requests can’t reach your own network — whatever the URL says.</p>
+    <div class="cards">
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> Public HTTPS only</b><span>Loopback, private, link-local, CGNAT and mapped addresses refused; DNS pinned; no redirects.</span></div>
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> Signed bodies</b><span>HMAC-SHA256 over timestamp and body, with a secret per rule.</span></div>
+      <div class="card"><b><svg class="ck" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A9B8D6" stroke-width="3"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg> Secrets stay secret</b><span>Encrypted at rest, env vars allowed, never in the queue, masked in the log.</span></div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<!-- 7 · Closing -->
+<section class="slide closing" data-n="7">
+  <div class="caution"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5b041" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg> A Craft 6 plugin on a beta CMS. Try it on staging first, keep backups, and use caution on production.</div>
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> Free</div>
+    <h2>The right people, the right channel</h2>
+    <div class="grid">
+      <div class="cell"><b>Rules in the control panel</b><span>Triggers, sites, sections, conditions, people and channels.</span></div>
+      <div class="cell"><b>Permission-aware</b><span>Only people who can view the content, and only what they could see.</span></div>
+      <div class="cell"><b>Twig, Blade and GraphQL</b><span>A front-end bell in both engines; your own notifications over GraphQL.</span></div>
+      <div class="cell"><b>A delivery log</b><span>Sent, skipped and why, failed and why — with retries and tests.</span></div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Switchboard</b> &nbsp;·&nbsp; Craft CMS 6 (beta) &nbsp;·&nbsp; justinholt.com/plugins/craft-switchboard</div>
+</section>
+
+<script>
+  var n = new URLSearchParams(location.search).get('s');
+  if (n) {
+    document.body.classList.add('single');
+    var el = document.querySelector('.slide[data-n="' + n + '"]');
+    if (el) el.classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -34,6 +34,17 @@ class Rule extends Model
 {
     public const string HANDLE_PATTERN = '/^[a-z][a-zA-Z0-9_\-]{0,63}$/D';
 
+    /**
+     * Body templates live in the site templates' `_switchboard/` folder: no `..`, no
+     * empty segments, Twig or Blade. Only admins can set one.
+     */
+    public const string TEMPLATE_PATTERN = '#^_switchboard(/[A-Za-z0-9_\-]+(\.[A-Za-z0-9_\-]+)*)+$#D';
+
+    public static function isTemplatePath(string $path): bool
+    {
+        return (bool) preg_match(self::TEMPLATE_PATTERN, $path) && ! str_contains($path, '..');
+    }
+
     protected $table = 'switchboard_rules';
 
     protected $guarded = ['id'];

@@ -18,13 +18,17 @@ use Throwable;
 /**
  * A rule's filters: its sources (sections, volumes or user groups) and its
  * conditions (attribute / operator / value rows, all of which must match).
+ *
+ * Conditions only read what an anonymous viewer could: element attributes and
+ * custom fields without a user condition. Personal details (usernames, emails)
+ * and conditional fields can't be tested.
  */
 class Conditions
 {
     public const array OPERATORS = ['equals', 'notEquals', 'contains', 'notContains', 'empty', 'notEmpty'];
 
     /** Element attributes conditions can test, besides custom fields. */
-    public const array ATTRIBUTES = ['title', 'slug', 'uri', 'status', 'section', 'type', 'volume', 'kind', 'filename', 'username', 'email'];
+    public const array ATTRIBUTES = ['title', 'slug', 'uri', 'status', 'section', 'type', 'volume', 'kind', 'filename'];
 
     public static function sourcesMatch(Rule $rule, ?ElementInterface $element): bool
     {
@@ -105,8 +109,9 @@ class Conditions
                 'filename' => $element instanceof Asset ? $element->getFilename() : null,
                 'title' => Snapshot::title($element),
                 'slug', 'uri' => $element->{$attribute} ?? null,
-                'username', 'email' => $element instanceof User ? $element->{$attribute} : null,
-                default => $element->getFieldLayout()?->getFieldByHandle($attribute) !== null ? $element->getFieldValue($attribute) : null,
+                // Only fields anyone could see: a field behind a user condition can't be tested,
+                // so a rule can't be used to learn what it holds.
+                default => Snapshot::fieldVisible($element, $attribute, null) ? $element->getFieldValue($attribute) : null,
             };
         } catch (Throwable) {
             return null;

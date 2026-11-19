@@ -93,6 +93,10 @@ class RulesController
         $id = (int) $request->input('id', 0);
         $rule = $id > 0 ? ($this->rules->get($id) ?? abort(404)) : new Rule;
         $isAdmin = (bool) currentUserElement()?->admin;
+
+        // A rule that posts to ad-hoc destinations (webhooks, Slack, …) decides what leaves
+        // the site, so only admins may change anything about it.
+        abort_if(! $isAdmin && $rule->routeList() !== [], 403, 'Only admins can change rules with ad-hoc destinations.');
         $trigger = (string) $request->input('trigger', '');
         if ($trigger === 'custom') {
             $trigger = 'custom:'.trim((string) $request->input('customTrigger', ''));
@@ -135,7 +139,7 @@ class RulesController
             'routes.*.to' => ['nullable', 'string', 'max:2048'],
             'subject' => ['nullable', 'string', 'max:1000'],
             'body' => ['nullable', 'string', 'max:20000'],
-            'template' => ['nullable', 'string', 'max:255', 'regex:#^[A-Za-z0-9_\-][A-Za-z0-9_\-/.]*$#', 'not_regex:#\.\.#'],
+            'template' => ['nullable', 'string', 'max:255', 'regex:'.Rule::TEMPLATE_PATTERN],
             'payloadFields' => ['nullable', 'string', 'max:1000', 'regex:/^[A-Za-z0-9_,\s]*$/'],
         ], [], [
             'name' => t('Name', category: 'switchboard'),
@@ -144,15 +148,33 @@ class RulesController
         ]);
 
         $users = [];
-        $validator->after(function ($validator) use ($request, &$users, $isAdmin) {
+        $validator->after(function ($validator) use ($request, &$users, $isAdmin, $rule) {
+            $me = currentUserElement();
+            // Without “View users”, naming anyone but yourself would reveal which accounts exist,
+            // so it fails the same way whether or not the person exists.
+            $canLookUp = $isAdmin || (bool) $me?->can('viewUsers');
+            $existing = $rule->userIds();
             foreach (self::lines((string) $request->input('users', '')) as $who) {
                 $user = ctype_digit($who) ? User::find()->id((int) $who)->status(null)->one()
                     : (User::find()->username($who)->status(null)->one() ?? User::find()->email($who)->status(null)->one());
+                if (! $canLookUp && ($user === null || ($user->id !== $me?->id && ! in_array((int) $user->id, $existing, true)))) {
+                    $validator->errors()->add('users', t('Without the “View users” permission you can only add yourself.', category: 'switchboard'));
+
+                    continue;
+                }
                 if (! $user instanceof User) {
                     $validator->errors()->add('users', t('No user matches “{who}”.', ['who' => $who], category: 'switchboard'));
                 } else {
                     $users[] = (int) $user->id;
                 }
+            }
+
+            if (! $isAdmin && trim((string) $request->input('template', '')) !== (string) $rule->template) {
+                $validator->errors()->add('template', t('Only admins can choose a body template.', category: 'switchboard'));
+            }
+
+            if (! $isAdmin) {
+                $this->checkSourcesForNonAdmin($validator, (string) $request->input('trigger'), (array) $validator->getData()['sourceList']);
             }
 
             $routes = self::submittedRoutes($request);
@@ -211,6 +233,7 @@ class RulesController
     public function delete(Request $request): Response
     {
         $rule = $this->rules->get((int) $request->input('id')) ?? abort(404);
+        abort_if(! currentUserElement()?->admin && $rule->routeList() !== [], 403, 'Only admins can delete rules with ad-hoc destinations.');
         $rule->delete();
         $this->rules->forget();
 
@@ -229,8 +252,9 @@ class RulesController
             return $this->asFailure($result['error']);
         }
 
+        // The same answer whatever happened, so a test can't be used to probe elements.
         return $this->asSuccess(
-            t('Test queued: {queued} deliveries, {skipped} skipped. See Deliveries.', $result, category: 'switchboard'),
+            t('Test sent. See Deliveries for what went where.', category: 'switchboard'),
             redirect: Url::cpUrl('switchboard/rules/'.$rule->id),
         );
     }
@@ -330,6 +354,47 @@ class RulesController
         $bag = $request->hasSession() ? $request->session()->get('errors') : null;
 
         return $bag instanceof ViewErrorBag ? $bag->getBag('default')->toArray() : [];
+    }
+
+    /**
+     * Non-admins may only build rules about things they can see themselves: entry rules
+     * on sections they can view, asset rules on volumes they can view, user rules if they
+     * can view users — always naming the sources. Failed-job and custom triggers are
+     * admin-only. So a rule can't tell its editor anything about content they can't see
+     * (through conditions, the delivery log or a test).
+     *
+     * @param  array<array-key, mixed>  $sources
+     */
+    private function checkSourcesForNonAdmin(\Illuminate\Validation\Validator $validator, string $trigger, array $sources): void
+    {
+        $user = currentUserElement() ?? abort(403);
+        $kind = Triggers::sourceKind($trigger);
+
+        if ($kind === null) {
+            $validator->errors()->add('trigger', t('Only admins can create rules for this trigger.', category: 'switchboard'));
+
+            return;
+        }
+
+        if ($sources === []) {
+            $validator->errors()->add('sources', t('Choose at least one source you can view.', category: 'switchboard'));
+
+            return;
+        }
+
+        foreach ($sources as $uid) {
+            $allowed = match ($kind) {
+                'sections' => $user->can('viewEntries:'.$uid),
+                'volumes' => $user->can('viewAssets:'.$uid),
+                default => $user->can('viewUsers'),
+            };
+
+            if (! $allowed) {
+                $validator->errors()->add('sources', t('You can only choose sources you can view.', category: 'switchboard'));
+
+                return;
+            }
+        }
     }
 
     /** @return list<array{channel: string, to: string}> */

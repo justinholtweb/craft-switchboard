@@ -118,6 +118,23 @@ class Snapshot
     }
 
     /**
+     * Whether the custom field with this handle is in the element's layout and
+     * visible to $viewer (null: an anonymous viewer, who sees no conditional field).
+     */
+    public static function fieldVisible(ElementInterface $element, string $handle, ?User $viewer): bool
+    {
+        foreach ($element->getFieldLayout()?->getTabs() ?? [] as $tab) {
+            foreach ($tab->getElements() as $layoutElement) {
+                if ($layoutElement instanceof CustomField && $layoutElement->attribute() === $handle) {
+                    return self::visible($tab, $element, $viewer) && self::visible($layoutElement, $element, $viewer);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Whether a tab or field shows for this recipient in the element editor. An
      * anonymous destination never sees anything behind a user condition.
      */

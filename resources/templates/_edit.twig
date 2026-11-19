@@ -1,4 +1,5 @@
 {# Switchboard → rule edit screen #}
+{% set locked = not isAdmin and form.routes is not empty %}
 <style>
   .sb-form { display: grid; gap: 1.5rem; max-width: 60rem; }
   .sb-form fieldset { border: 1px solid var(--gray-200, #e3e5e8); border-radius: 6px; padding: 1rem 1.25rem; display: grid; gap: 1rem; }
@@ -80,7 +81,8 @@
         </div>
       {% endif %}
     {% endfor %}
-    <p class="sb-hint">{{ 'Only the sources that fit the trigger count. None ticked: all of them.'|t('switchboard') }}</p>
+    <p class="sb-hint">{{ 'Only the sources that fit the trigger count. None ticked: all of them (admins only — everyone else picks sources they can view).'|t('switchboard') }}</p>
+    {% if errors.sources ?? null %}<p class="sb-error" id="sb-sources-error">{{ errors.sources }}</p>{% endif %}
 
     <div class="sb-field">
       <span class="sb-label">{{ 'Conditions'|t('switchboard') }}</span>
@@ -96,7 +98,7 @@
           </tr>
         {% endfor %}
       </table>
-      <p class="sb-hint">{{ 'All must match. Attributes: title, slug, uri, status, section, type, volume, filename, username, email, or a custom field handle (failed jobs: job, queue, connection, exception). Case-insensitive; blank rows are ignored.'|t('switchboard') }}</p>
+      <p class="sb-hint">{{ 'All must match. Attributes: title, slug, uri, status, section, type, volume, filename, or the handle of a custom field everyone can see (fields behind a user condition can’t be tested). Failed jobs: job, queue, connection, exception. Case-insensitive; blank rows are ignored.'|t('switchboard') }}</p>
       {% if errors['conditions.0.attribute'] ?? null %}<p class="sb-error">{{ errors['conditions.0.attribute'] }}</p>{% endif %}
     </div>
   </fieldset>
@@ -171,8 +173,8 @@
     </div>
     <div class="sb-field">
       <label for="sb-template">{{ 'Body template'|t('switchboard') }}</label>
-      <input class="text code" type="text" id="sb-template" name="template" value="{{ form.template }}" placeholder="_notifications/published.twig">
-      <p class="sb-hint">{{ 'Instead of the body: a site template in Twig (.twig) or Blade (.blade.php). Same variables, plus `object` (the element itself).'|t('switchboard') }}</p>
+      <input class="text code" type="text" id="sb-template" name="template" value="{{ form.template }}" placeholder="_switchboard/published.twig" {{ not isAdmin ? 'readonly' }}>
+      <p class="sb-hint">{{ 'Instead of the body: a site template in the `_switchboard/` folder, Twig (.twig) or Blade (.blade.php). Same variables, plus `object` (the element itself). Admins only.'|t('switchboard') }}</p>
       {% if errors.template ?? null %}<p class="sb-error">{{ errors.template }}</p>{% endif %}
     </div>
     <div class="sb-field">
@@ -190,7 +192,11 @@
     {% endif %}
   </fieldset>
 
-  <div><button type="submit" class="btn submit">{{ 'Save'|t('switchboard') }}</button></div>
+  {% if locked %}
+    <p class="sb-note" id="sb-locked">{{ 'This rule posts to ad-hoc destinations, so only admins can change it.'|t('switchboard') }}</p>
+  {% else %}
+    <div><button type="submit" class="btn submit">{{ 'Save'|t('switchboard') }}</button></div>
+  {% endif %}
 </form>
 
 {% if not isNew %}

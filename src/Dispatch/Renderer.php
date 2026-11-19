@@ -54,6 +54,9 @@ class Renderer
                 : Triggers::defaultSubject($trigger, $params);
 
             if (trim((string) $rule->template) !== '') {
+                if (! Rule::isTemplatePath((string) $rule->template)) {
+                    throw new \RuntimeException('Body templates must be in the `_switchboard/` templates folder.');
+                }
                 $body = Template::renderTemplate((string) $rule->template, $vars + ['object' => $element], TemplateMode::Site);
             } elseif (trim((string) $rule->body) !== '') {
                 $body = Template::renderSandboxedString((string) $rule->body, $vars, TemplateMode::Site);

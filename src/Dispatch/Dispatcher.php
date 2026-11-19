@@ -91,7 +91,9 @@ class Dispatcher
             return $result;
         }
 
-        if (! Conditions::sourcesMatch($rule, $element) || ! Conditions::match($rule, $element, $context->extra)) {
+        // A test send ignores sources and conditions: it's about the message, and must not
+        // reveal whether an element matches.
+        if (! $test && (! Conditions::sourcesMatch($rule, $element) || ! Conditions::match($rule, $element, $context->extra))) {
             return $result;
         }
 

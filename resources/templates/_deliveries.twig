@@ -21,7 +21,8 @@
       {% for s in statuses %}<option value="{{ s }}" {{ status == s ? 'selected' }}>{{ s }}</option>{% endfor %}
     </select></label>
   <button type="submit" class="btn">{{ 'Filter'|t('switchboard') }}</button>
-  <span id="sb-total">{{ '{total} deliveries'|t('switchboard', {total: total}) }}</span>
+  {% if total is not null %}<span id="sb-total">{{ '{total} deliveries'|t('switchboard', {total: total}) }}</span>{% endif %}
+  {% if hidden %}<span id="sb-hidden">{{ '{n} on this page are about things you can’t view, so they’re hidden.'|t('switchboard', {n: hidden}) }}</span>{% endif %}
 </form>
 
 {% if rows is empty %}

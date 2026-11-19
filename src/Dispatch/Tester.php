@@ -20,9 +20,10 @@ use function CraftCms\Cms\t;
 
 /**
  * “Send test”: the rule's message, rendered for one user about a real element
- * (the one given, or the newest that matches the rule and that user may view).
- * The rule's recipients are ignored; its channels are used. Ad-hoc destinations
- * only when asked.
+ * (the one given, or the newest from the rule's sources that user may view).
+ * The rule's recipients and conditions are ignored, so a test never reveals
+ * whether an element matches; its channels are used. Ad-hoc destinations only
+ * when asked.
  */
 class Tester
 {
@@ -45,7 +46,7 @@ class Tester
         $element = $elementId !== null ? $this->given($elementId, $type) : $this->latest($rule, $type, $user);
 
         if ($element === null) {
-            return ['error' => t('No element to test with: none matches the rule that you can view.', category: 'switchboard')];
+            return ['error' => t('No element to test with: there’s none of this kind that you can view.', category: 'switchboard')];
         }
 
         if (! $element->canView($user)) {
@@ -68,6 +69,7 @@ class Tester
     /** @param class-string|null $type */
     private function latest(Rule $rule, ?string $type, User $user): ?ElementInterface
     {
+        // The rule's sources narrow the pick (they're configuration, not content); its conditions don't run.
         $sources = array_values(array_filter(array_map('strval', (array) $rule->sources)));
         $query = match ($type) {
             Entry::class => Entry::find()->status(null)->section($sources === [] ? null : array_values(array_filter(array_map(fn ($uid) => Sections::getSectionByUid($uid)?->handle, $sources)))),
@@ -81,7 +83,7 @@ class Tester
         }
 
         foreach ($query->orderBy('elements.dateCreated desc')->limit(25)->all() as $element) {
-            if ($element instanceof ElementInterface && $element->canView($user) && Conditions::match($rule, $element)) {
+            if ($element instanceof ElementInterface && $element->canView($user)) {
                 return $element;
             }
         }

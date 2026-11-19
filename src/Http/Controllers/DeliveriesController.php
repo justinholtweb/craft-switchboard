@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JustinHoltWeb\Switchboard\Http\Controllers;
 
 use CraftCms\Cms\Http\Responses\CpScreenResponse;
+use CraftCms\Cms\Support\Facades\Elements;
 use CraftCms\Cms\Support\Facades\Sites;
 use Illuminate\Http\Request;
 use JustinHoltWeb\Switchboard\Channels\Channels;
@@ -12,6 +13,7 @@ use JustinHoltWeb\Switchboard\Delivery\Delivery;
 use JustinHoltWeb\Switchboard\Rules\Rule;
 use JustinHoltWeb\Switchboard\Triggers\Triggers;
 
+use function CraftCms\Cms\currentUserElement;
 use function CraftCms\Cms\t;
 
 /**
@@ -36,7 +38,28 @@ class DeliveriesController
         $page = min($pages, max(1, (int) $request->query('page', 1)));
         $rules = Rule::query()->orderBy('name')->get(['id', 'name', 'handle'])->keyBy('id');
 
-        $rows = $query->latest('id')->limit(self::PER_PAGE)->offset(($page - 1) * self::PER_PAGE)->get()
+        $viewer = currentUserElement() ?? abort(403);
+        $hidden = 0;
+        $deliveries = $query->latest('id')->limit(self::PER_PAGE)->offset(($page - 1) * self::PER_PAGE)->get();
+
+        // Non-admins only see deliveries about elements they can view themselves (and none
+        // about failed jobs or element-less custom triggers), so the log can't be used to
+        // learn about content they can't see.
+        if (! $viewer->admin) {
+            $ids = $deliveries->pluck('elementId')->filter()->unique()->values()->all();
+            $viewable = [];
+            foreach ($ids as $id) {
+                $el = Elements::getElementById((int) $id);
+                if ($el !== null && $el->canView($viewer)) {
+                    $viewable[(int) $id] = true;
+                }
+            }
+            $before = $deliveries->count();
+            $deliveries = $deliveries->filter(fn (Delivery $d) => $d->elementId !== null && isset($viewable[$d->elementId]))->values();
+            $hidden = $before - $deliveries->count();
+        }
+
+        $rows = $deliveries
             ->map(fn (Delivery $d) => [
                 'id' => $d->id,
                 'date' => $d->created_at?->format('Y-m-d H:i:s'),
@@ -63,7 +86,8 @@ class DeliveriesController
                 'statuses' => Delivery::STATUSES,
                 'page' => $page,
                 'pages' => $pages,
-                'total' => $total,
+                'total' => $viewer->admin ? $total : null,
+                'hidden' => $hidden,
             ]);
     }
 }

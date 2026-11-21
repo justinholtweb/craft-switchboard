@@ -2,7 +2,7 @@
     "name": "justinholtweb/craft-switchboard",
     "description": "Route Craft events to any Laravel notification channel — Slack, SMS, Discord, Teams, mail — with rules you build in the CP.",
     "type": "craft-plugin",
-    "version": "6.0.0-beta.1",
+    "version": "6.0.0-beta.2",
     "keywords": [
         "craft",
         "cms",

@@ -2,7 +2,12 @@
 
 > Switchboard is a **Craft CMS 6** plugin. Craft 6 is in beta: use caution on production.
 
-## 6.0.0-beta.1 - Unreleased
+## 6.0.0-beta.2 - 2026-11-21
+
+### Changed
+- The docs FAQ now compares Switchboard with Control Tower, Schedulr and Lyfe.
+
+## 6.0.0-beta.1 - 2026-11-19
 
 ### Added
 - Notification rules, managed in the control panel (Switchboard → Rules): a trigger, sites, sources, conditions, recipients, channels, ad-hoc destinations and a message.

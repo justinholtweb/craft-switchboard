@@ -26,3 +26,21 @@ rules that notify Craft users.
 signing secrets, which shouldn't be in git. Destinations and secrets are encrypted with your app key.
 
 **Can Switchboard send scheduled digests?** Not yet.
+
+## How is it different from Control Tower?
+
+[Control Tower](https://craft-controltower.com) is an operations dashboard for Craft 5. It watches
+traffic, editors, the queue and the server, and its alert rules can post to Slack, Teams or email
+when a threshold is crossed.
+
+Switchboard is about **content and people**, on Craft 6: an entry published, updated or deleted, a
+user registered or activated, an asset uploaded, or your own event, sent to Slack, Discord, Teams,
+SMS, email or the control-panel bell. They overlap on one trigger: both can tell you a queued job
+failed.
+
+## Isn't this what Schedulr or Lyfe do?
+
+No. Those plugins message your **audience**, on Craft 5.
+Schedulr sends scheduled web push, email and on-site
+notifications to subscribers. Lyfe runs marketing automations for Commerce customers. Switchboard
+tells **your team** that something happened on the site.
